@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: locust-flood
+  namespace: apps
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: locust
+          image: os2-traffic:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TARGET_HOST
+              value: https://apache.apps.svc.cluster.local
+            - name: LOCUST_VERIFY_SSL
+              value: "false"
+          command:
+            - locust
+            - -f
+            - locustfile.py
+            - --headless
+            - -u
+            - "50"
+            - -r
+            - "10"
+            - --run-time
+            - 60s
+            - --host
+            - https://apache.apps.svc.cluster.local

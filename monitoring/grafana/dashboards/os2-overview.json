@@ -1,0 +1,196 @@
+{
+  "uid": "os2-overview",
+  "title": "OS2 Stack Overview",
+  "tags": ["os2"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {"from": "now-6h", "to": "now"},
+  "panels": [
+    {
+      "type": "row",
+      "title": "Kubernetes & workloads",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Webapp ready",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+      "targets": [{"expr": "kube_statefulset_status_replicas_ready{namespace=\"apps\", statefulset=\"webapp\"}", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
+    },
+    {
+      "type": "stat",
+      "title": "Webapp desired",
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+      "targets": [{"expr": "kube_statefulset_replicas{namespace=\"apps\", statefulset=\"webapp\"}", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"}
+    },
+    {
+      "type": "stat",
+      "title": "HPA current",
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1},
+      "targets": [{"expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"apps\", horizontalpodautoscaler=\"webapp\"}", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"}
+    },
+    {
+      "type": "stat",
+      "title": "Apache ready",
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1},
+      "targets": [{"expr": "kube_deployment_status_replicas_available{namespace=\"apps\", deployment=\"apache\"}", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
+    },
+    {
+      "type": "stat",
+      "title": "Redis ready",
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1},
+      "targets": [{"expr": "kube_deployment_status_replicas_available{namespace=\"apps\", deployment=\"redis\"}", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
+      "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
+    },
+    {
+      "type": "stat",
+      "title": "Containers ready",
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1},
+      "targets": [{"expr": "sum(kube_pod_container_status_ready{namespace=\"apps\", container!=\"POD\"})", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"}
+    },
+    {
+      "type": "table",
+      "title": "Pod / container status (apps)",
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 5},
+      "targets": [{
+        "expr": "kube_pod_container_status_ready{namespace=\"apps\", container!=\"POD\"}",
+        "refId": "A",
+        "format": "table",
+        "instant": true
+      }],
+      "transformations": [
+        {"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "container_id": true, "endpoint": true, "instance": true, "job": true, "service": true, "uid": true, "image": true, "image_id": true, "image_spec": true}, "renameByName": {"pod": "Pod", "container": "Container", "namespace": "Namespace", "Value": "Ready"}}}
+      ],
+      "fieldConfig": {"defaults": {"mappings": [{"type": "value", "options": {"0": {"text": "Not ready", "color": "red"}, "1": {"text": "Ready", "color": "green"}}}], "custom": {"displayMode": "color-text"}}}
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP request rate by webapp pod",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 11},
+      "targets": [{
+        "expr": "sum by (pod) (rate(http_requests_total{namespace=\"apps\"}[1m]))",
+        "legendFormat": "{{pod}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Apache access log throughput (classifier)",
+      "description": "Apache has no Prometheus exporter; classifier sidecar counts JSON access log lines.",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 11},
+      "targets": [{
+        "expr": "rate(logs_processed_total{namespace=\"apps\"}[1m])",
+        "legendFormat": "logs/s",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "row",
+      "title": "Load & latency",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 19},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP requests rate by handler",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "targets": [{
+        "expr": "sum by (handler) (rate(http_requests_total{namespace=\"apps\"}[1m]))",
+        "legendFormat": "{{handler}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Request duration p95",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"apps\"}[5m])) by (le))",
+        "legendFormat": "p95",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "row",
+      "title": "Resources (apps namespace)",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 28},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Container CPU",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 29},
+      "targets": [{
+        "expr": "sum by (pod, container) (rate(container_cpu_usage_seconds_total{namespace=\"apps\", container!=\"\", container!=\"POD\"}[1m]))",
+        "legendFormat": "{{pod}}/{{container}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "timeseries",
+      "title": "Container memory",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 29},
+      "targets": [{
+        "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"apps\", container!=\"\", container!=\"POD\"})",
+        "legendFormat": "{{pod}}/{{container}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "row",
+      "title": "Security (classifier)",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 37},
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Classifier events by category",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 38},
+      "targets": [{
+        "expr": "rate(log_events_total{namespace=\"apps\"}[1m])",
+        "legendFormat": "{{category}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "type": "gauge",
+      "title": "ML anomaly score",
+      "gridPos": {"h": 8, "w": 4, "x": 12, "y": 38},
+      "targets": [{"expr": "ml_anomaly_score{namespace=\"apps\"}", "refId": "A"}],
+      "fieldConfig": {"defaults": {"min": 0, "max": 1}}
+    },
+    {
+      "type": "stat",
+      "title": "Flagged IPs (DDoS)",
+      "gridPos": {"h": 8, "w": 4, "x": 16, "y": 38},
+      "targets": [{"expr": "flagged_ips_total{namespace=\"apps\", reason=\"ddos_suspect\"}", "refId": "A"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"}
+    },
+    {
+      "type": "timeseries",
+      "title": "5xx events (via Apache logs)",
+      "description": "Classifier tags HTTP 5xx from Apache JSON access logs. mod_ratelimit does not emit 429.",
+      "gridPos": {"h": 8, "w": 4, "x": 20, "y": 38},
+      "targets": [{
+        "expr": "rate(log_events_total{namespace=\"apps\", category=\"error_5xx\"}[1m])",
+        "legendFormat": "5xx",
+        "refId": "A"
+      }]
+    }
+  ]
+}

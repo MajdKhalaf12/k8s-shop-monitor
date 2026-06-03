@@ -1,0 +1,4 @@
+# Assignment-required compose file — delegates to local dev stack.
+# Primary runtime: Kubernetes (`make k8s`).
+include:
+  - docker-compose.dev.yml

@@ -5,7 +5,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="CLASSIFIER_")
 
     log_path: str = "/logs/access.log"
-    redis_url: str = "redis://redis:6379/0"
     metrics_port: int = 8001
     anomaly_threshold: float = 0.75
     ddos_threshold: int = 20

@@ -23,6 +23,7 @@ prometheus:
     serviceMonitorSelector: {}
     podMonitorSelector: {}
     ruleSelector: {}
+    enableAdminAPI: true
 
 alertmanager:
   enabled: true

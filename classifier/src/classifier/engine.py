@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import redis
-
 from classifier.anomaly import AnomalyEngine
 from classifier.config import settings
 from classifier.detector import StatefulDetector
@@ -12,8 +10,7 @@ from classifier import patterns
 
 class ClassificationEngine:
     def __init__(self) -> None:
-        self._redis = redis.from_url(settings.redis_url, decode_responses=True)
-        self._detector = StatefulDetector(self._redis)
+        self._detector = StatefulDetector()
         self._anomaly = AnomalyEngine()
 
     def process(self, entry: LogEntry) -> list[str]:

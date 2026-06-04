@@ -31,29 +31,14 @@ services:
     mem_limit: 256m
     cpus: "0.5"
 
-  redis:
-    image: redis:7-alpine
-    networks: [backend]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
-    mem_limit: 128m
-
   classifier:
     build: ./classifier
     environment:
       CLASSIFIER_LOG_PATH: /logs/access.log
-      CLASSIFIER_REDIS_URL: redis://redis:6379/0
       CLASSIFIER_METRICS_PORT: "8001"
     volumes:
       - apache_logs:/logs:ro
     networks: [backend]
-    depends_on:
-      redis:
-        condition: service_healthy
     restart: unless-stopped
     mem_limit: 512m
     cpus: "0.5"

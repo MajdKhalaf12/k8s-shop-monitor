@@ -15,14 +15,18 @@ spec:
       labels:
         app: apache
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: vm1
       containers:
         - name: apache
           image: os2-apache:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 443
+              hostPort: 443
               name: https
             - containerPort: 80
+              hostPort: 80
               name: http
           env:
             - name: WEBAPP_BACKEND_0
@@ -44,9 +48,10 @@ spec:
               cpu: 500m
           livenessProbe:
             tcpSocket:
-              port: 443
-            initialDelaySeconds: 15
-            periodSeconds: 10
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
         - name: classifier
           image: os2-classifier:latest
           imagePullPolicy: IfNotPresent
@@ -56,8 +61,6 @@ spec:
           env:
             - name: CLASSIFIER_LOG_PATH
               value: /logs/access.log
-            - name: CLASSIFIER_REDIS_URL
-              value: redis://redis.apps.svc.cluster.local:6379/0
             - name: CLASSIFIER_METRICS_PORT
               value: "8001"
           volumeMounts:
@@ -85,7 +88,7 @@ metadata:
   labels:
     app: apache
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: apache
   ports:

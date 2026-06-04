@@ -12,7 +12,6 @@ generatorOptions:
   disableNameSuffixHash: true
 
 resources:
-  - k8s/apps/redis-deployment.yaml
   - k8s/apps/webapp-service.yaml
   - k8s/apps/webapp-statefulset.yaml
   - k8s/apps/webapp-pdb.yaml

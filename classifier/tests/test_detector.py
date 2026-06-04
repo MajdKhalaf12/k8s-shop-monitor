@@ -1,11 +1,8 @@
-import fakeredis
-
 from classifier.detector import StatefulDetector
 
 
 def test_ddos_threshold():
-    r = fakeredis.FakeRedis(decode_responses=True)
-    det = StatefulDetector(r)
+    det = StatefulDetector()
     ip = "192.168.1.99"
     triggered = False
     for _ in range(25):

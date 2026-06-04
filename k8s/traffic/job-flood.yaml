@@ -23,10 +23,14 @@ spec:
             - locustfile.py
             - --headless
             - -u
-            - "50"
+            - "60"
             - -r
-            - "10"
+            - "5"
             - --run-time
-            - 60s
+            - 200s
             - --host
             - https://apache.apps.svc.cluster.local
+            - --exit-code-on-error
+            - "0"
+            - --html
+            - /tmp/report.html

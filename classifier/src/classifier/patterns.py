@@ -18,7 +18,7 @@ XSS_PATTERNS = [
     re.compile(r"(?i)document\.(cookie|write)"),
 ]
 
-SENSITIVE_PATHS = {"/admin", "/.env", "/config", "/wp-login", "/.git", "/.aws/credentials"}
+SENSITIVE_PATHS = {"/admin", "/.env", "/config", "/wp-login", "/.git", "/.aws/credentials", "/users"}
 
 
 def check_sqli(uri: str) -> bool:

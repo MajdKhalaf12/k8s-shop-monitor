@@ -21,8 +21,19 @@ class ClassificationEngine:
         if entry.status >= 500:
             categories.append("error_5xx")
 
+        if entry.status == 403:
+            categories.append("auth_forbidden")
+
         if entry.status == 429:
             categories.append("rate_limited")
+            if self._detector.record_and_check(
+                ip,
+                "rate_429",
+                settings.ddos_window_sec,
+                settings.ddos_429_threshold,
+            ):
+                categories.append("ddos_suspect")
+                self._detector.flag_ip(ip, "ddos_suspect")
 
         if patterns.check_sqli(uri):
             categories.append("sqli_attempt")
@@ -42,7 +53,9 @@ class ClassificationEngine:
                 categories.append("auth_attack")
                 self._detector.flag_ip(ip, "auth_attack")
 
-        if self._detector.record_and_check(ip, "request"):
+        if self._detector.record_and_check(
+            ip, "request", settings.ddos_window_sec, settings.ddos_request_threshold
+        ):
             categories.append("ddos_suspect")
             self._detector.flag_ip(ip, "ddos_suspect")
 

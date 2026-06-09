@@ -1,10 +1,11 @@
+import sqlite3
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+from app.db import get_connection
 
-VALID_USER = "admin"
-VALID_PASS = "secret123"
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class LoginRequest(BaseModel):
@@ -14,6 +15,17 @@ class LoginRequest(BaseModel):
 
 @router.post("/login")
 async def login(body: LoginRequest):
-    if body.username == VALID_USER and body.password == VALID_PASS:
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            "SELECT username FROM users WHERE username = ? AND password = ?",
+            (body.username, body.password),
+        ).fetchone()
+    except sqlite3.Error as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    finally:
+        conn.close()
+
+    if row is not None:
         return {"status": "ok", "token": "demo-token"}
     raise HTTPException(status_code=401, detail="Invalid credentials")

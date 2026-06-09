@@ -1,12 +1,11 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: webapp
   namespace: apps
   labels:
     app: webapp
 spec:
-  serviceName: webapp
   replicas: 2
   selector:
     matchLabels:
@@ -22,19 +21,18 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
-              name: http
           env:
             - name: HOSTNAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
           resources:
             requests:
               cpu: 100m
               memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 256Mi
           livenessProbe:
             httpGet:
               path: /health
@@ -47,3 +45,6 @@ spec:
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 5
+      volumes:
+        - name: data
+          emptyDir: {}

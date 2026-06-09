@@ -6,4 +6,3 @@ namespace: monitoring
 resources:
   - servicemonitor-webapp.yaml
   - servicemonitor-classifier.yaml
-  - prometheusrule.yaml

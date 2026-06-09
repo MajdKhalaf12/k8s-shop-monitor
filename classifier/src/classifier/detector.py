@@ -6,8 +6,6 @@ from classifier.config import settings
 
 
 class StatefulDetector:
-    """Layer 3: in-process sliding windows per IP (single classifier sidecar)."""
-
     def __init__(self) -> None:
         self._windows: dict[str, list[float]] = {}
         self._recon_sets: dict[str, set[str]] = {}
@@ -24,10 +22,11 @@ class StatefulDetector:
     ) -> bool:
         window_sec = window_sec or settings.ddos_window_sec
         thresholds = {
-            "request": settings.ddos_threshold,
+            "rate_429": settings.ddos_429_threshold,
             "auth_401": settings.auth_threshold,
+            "request": settings.ddos_request_threshold,
         }
-        threshold = threshold or thresholds.get(event, settings.ddos_threshold)
+        threshold = threshold or thresholds.get(event, settings.ddos_429_threshold)
 
         key = f"{ip}:{event}"
         now = time.time()

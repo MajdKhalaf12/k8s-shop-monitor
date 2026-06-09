@@ -1,12 +1,23 @@
 import os
-from fastapi import APIRouter, Header, HTTPException
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+from fastapi import APIRouter, Header, HTTPException, FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 
+from app.db import init_db
+from app.middleware.rate_limit import RateLimitMiddleware
 from app.routes import admin, auth, products
 
-app = FastAPI(title="Qahwa Shop API", version="1.0.0")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="Qahwa Shop API", version="1.0.0", lifespan=lifespan)
+app.add_middleware(RateLimitMiddleware)
 api = APIRouter(prefix="/api/v1")
 api.include_router(auth.router)
 api.include_router(products.router)
@@ -28,8 +39,6 @@ async def add_to_cart(item: CartItem, authorization: str | None = Header(default
 
 @app.get("/admin")
 async def admin_root():
-    from fastapi import HTTPException
-
     raise HTTPException(status_code=403, detail="Forbidden")
 
 

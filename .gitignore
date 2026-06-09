@@ -1,5 +1,7 @@
 apache/ssl/
 os2-images.tar
+os2-traffic.tar
+os2-*.tar
 .env
 __pycache__/
 *.pyc

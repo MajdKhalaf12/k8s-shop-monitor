@@ -3,18 +3,9 @@ kind: Kustomization
 
 namespace: apps
 
-configMapGenerator:
-  - name: apache-config
-    files:
-      - httpd.conf=apache/httpd.conf
-
-generatorOptions:
-  disableNameSuffixHash: true
-
 resources:
   - k8s/apps/webapp-service.yaml
-  - k8s/apps/webapp-statefulset.yaml
-  - k8s/apps/webapp-pdb.yaml
+  - k8s/apps/webapp-deployment.yaml
+  - k8s/apps/webapp-ingress.yaml
   - k8s/apps/webapp-hpa.yaml
-  - k8s/apps/webapp-networkpolicy.yaml
-  - k8s/apps/apache-deployment.yaml
+  - k8s/apps/traffic-deployment.yaml

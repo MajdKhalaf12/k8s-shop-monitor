@@ -1,13 +1,5 @@
-# node-exporter needs host /proc,/sys,/ mounts with rshared propagation;
-# Docker Desktop on Mac fails with "path / is mounted on / but it is not a shared or slave mount"
-nodeExporter:
-  enabled: false
-prometheus-node-exporter:
-  enabled: false
-
 grafana:
   adminPassword: admin
-  defaultDashboardsEnabled: true
   sidecar:
     dashboards:
       enabled: true
@@ -19,13 +11,13 @@ prometheus:
   prometheusSpec:
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
-    ruleSelectorNilUsesHelmValues: false
     serviceMonitorSelector: {}
     podMonitorSelector: {}
-    ruleSelector: {}
-    enableAdminAPI: true
 
 alertmanager:
-  enabled: true
-  alertmanagerSpec:
-    routePrefix: /
+  enabled: false
+
+nodeExporter:
+  enabled: false
+prometheus-node-exporter:
+  enabled: false

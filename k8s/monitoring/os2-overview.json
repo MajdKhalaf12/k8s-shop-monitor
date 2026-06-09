@@ -6,7 +6,7 @@
   "schemaVersion": 39,
   "version": 1,
   "refresh": "30s",
-  "time": {"from": "now-6h", "to": "now"},
+  "time": {"from": "now-1h", "to": "now"},
   "panels": [
     {
       "type": "row",
@@ -19,7 +19,7 @@
       "type": "stat",
       "title": "Webapp ready",
       "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
-      "targets": [{"expr": "kube_statefulset_status_replicas_ready{namespace=\"apps\", statefulset=\"webapp\"}", "refId": "A"}],
+      "targets": [{"expr": "kube_deployment_status_replicas_available{namespace=\"apps\", deployment=\"webapp\"}", "refId": "A"}],
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
       "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
     },
@@ -27,7 +27,7 @@
       "type": "stat",
       "title": "Webapp desired",
       "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
-      "targets": [{"expr": "kube_statefulset_replicas{namespace=\"apps\", statefulset=\"webapp\"}", "refId": "A"}],
+      "targets": [{"expr": "kube_deployment_spec_replicas{namespace=\"apps\", deployment=\"webapp\"}", "refId": "A"}],
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"}
     },
     {
@@ -39,9 +39,9 @@
     },
     {
       "type": "stat",
-      "title": "Apache ready",
+      "title": "Ingress ready",
       "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1},
-      "targets": [{"expr": "kube_deployment_status_replicas_available{namespace=\"apps\", deployment=\"apache\"}", "refId": "A"}],
+      "targets": [{"expr": "kube_deployment_status_replicas_available{namespace=\"ingress-nginx\", deployment=\"ingress-nginx-controller\"}", "refId": "A"}],
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
       "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
     },
@@ -72,18 +72,18 @@
       "title": "HTTP request rate by webapp pod",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 11},
       "targets": [{
-        "expr": "sum by (pod) (rate(http_requests_total{namespace=\"apps\"}[1m]))",
+        "expr": "sum by (pod) (rate(http_requests_total{namespace=\"apps\", pod=~\"webapp-.*\"}[1m]) * on(pod, namespace) group_left() (kube_pod_status_phase{namespace=\"apps\", phase=\"Running\"} == 1))",
         "legendFormat": "{{pod}}",
         "refId": "A"
       }]
     },
     {
       "type": "timeseries",
-      "title": "Apache access log throughput (classifier)",
-      "description": "Apache has no Prometheus exporter; classifier sidecar counts JSON access log lines.",
+      "title": "Ingress access log throughput (classifier)",
+      "description": "Classifier sidecar on nginx-ingress counts JSON access log lines.",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 11},
       "targets": [{
-        "expr": "rate(logs_processed_total{namespace=\"apps\"}[1m])",
+        "expr": "rate(logs_processed_total{namespace=\"ingress-nginx\"}[1m])",
         "legendFormat": "logs/s",
         "refId": "A"
       }]
@@ -100,7 +100,7 @@
       "title": "HTTP requests rate by handler",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
       "targets": [{
-        "expr": "sum by (handler) (rate(http_requests_total{namespace=\"apps\"}[1m]))",
+        "expr": "sum by (handler) (rate(http_requests_total{namespace=\"apps\", pod=~\"webapp-.*\"}[1m]) * on(pod, namespace) group_left() (kube_pod_status_phase{namespace=\"apps\", phase=\"Running\"} == 1))",
         "legendFormat": "{{handler}}",
         "refId": "A"
       }]
@@ -110,7 +110,7 @@
       "title": "Request duration p95",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
       "targets": [{
-        "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"apps\"}[5m])) by (le))",
+        "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"apps\", pod=~\"webapp-.*\"}[5m]) * on(pod, namespace) group_left() (kube_pod_status_phase{namespace=\"apps\", phase=\"Running\"} == 1)) by (le))",
         "legendFormat": "p95",
         "refId": "A"
       }]
@@ -127,7 +127,7 @@
       "title": "Container CPU",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 29},
       "targets": [{
-        "expr": "sum by (pod, container) (rate(container_cpu_usage_seconds_total{namespace=\"apps\", container!=\"\", container!=\"POD\"}[1m]))",
+        "expr": "sum by (pod, container) (rate(container_cpu_usage_seconds_total{namespace=\"apps\", container!=\"\", container!=\"POD\"}[1m]) * on(pod, namespace) group_left() (kube_pod_status_phase{namespace=\"apps\", phase=\"Running\"} == 1))",
         "legendFormat": "{{pod}}/{{container}}",
         "refId": "A"
       }]
@@ -137,7 +137,7 @@
       "title": "Container memory",
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 29},
       "targets": [{
-        "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"apps\", container!=\"\", container!=\"POD\"})",
+        "expr": "sum by (pod, container) (container_memory_working_set_bytes{namespace=\"apps\", container!=\"\", container!=\"POD\"} * on(pod, namespace) group_left() (kube_pod_status_phase{namespace=\"apps\", phase=\"Running\"} == 1))",
         "legendFormat": "{{pod}}/{{container}}",
         "refId": "A"
       }]
@@ -154,7 +154,7 @@
       "title": "Classifier events by category",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 38},
       "targets": [{
-        "expr": "sum by (category) (rate(log_events_total{namespace=\"apps\"}[1m]))",
+        "expr": "sum by (category) (rate(log_events_total{namespace=\"ingress-nginx\"}[1m]))",
         "legendFormat": "{{category}}",
         "refId": "A"
       }]
@@ -163,24 +163,24 @@
       "type": "gauge",
       "title": "ML anomaly score",
       "gridPos": {"h": 8, "w": 4, "x": 12, "y": 38},
-      "targets": [{"expr": "max(ml_anomaly_score{namespace=\"apps\", pod=~\"apache-.*\"})", "legendFormat": "score", "refId": "A"}],
+      "targets": [{"expr": "max(ml_anomaly_score{namespace=\"ingress-nginx\", pod=~\"ingress-nginx-controller-.*\"})", "legendFormat": "score", "refId": "A"}],
       "fieldConfig": {"defaults": {"min": 0, "max": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.5}, {"color": "red", "value": 0.8}]}}}
     },
     {
       "type": "stat",
       "title": "Flagged IPs (DDoS)",
       "gridPos": {"h": 8, "w": 4, "x": 16, "y": 38},
-      "targets": [{"expr": "sum(flagged_ips_total{namespace=\"apps\", reason=\"ddos_suspect\"})", "legendFormat": "flagged IPs", "refId": "A"}],
+      "targets": [{"expr": "sum(flagged_ips_total{namespace=\"ingress-nginx\", reason=\"ddos_suspect\"})", "legendFormat": "flagged IPs", "refId": "A"}],
       "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "none"},
       "fieldConfig": {"defaults": {"thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 5}]}}}
     },
     {
       "type": "timeseries",
-      "title": "5xx events (via Apache logs)",
-      "description": "Classifier tags HTTP 5xx from Apache JSON access logs. mod_ratelimit does not emit 429.",
+      "title": "5xx events (via ingress logs)",
+      "description": "Classifier tags HTTP 5xx from nginx JSON access logs.",
       "gridPos": {"h": 8, "w": 4, "x": 20, "y": 38},
       "targets": [{
-        "expr": "sum(rate(log_events_total{namespace=\"apps\", category=\"error_5xx\"}[1m]))",
+        "expr": "sum(rate(log_events_total{namespace=\"ingress-nginx\", category=\"error_5xx\"}[1m]))",
         "legendFormat": "5xx/s",
         "refId": "A"
       }]

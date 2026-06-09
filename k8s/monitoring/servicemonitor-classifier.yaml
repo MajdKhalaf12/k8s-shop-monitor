@@ -8,10 +8,11 @@ metadata:
 spec:
   namespaceSelector:
     matchNames:
-      - apps
+      - ingress-nginx
   selector:
     matchLabels:
-      app: apache
+      app.kubernetes.io/name: ingress-nginx
+      app.kubernetes.io/component: controller
   podMetricsEndpoints:
     - port: metrics
       path: /metrics

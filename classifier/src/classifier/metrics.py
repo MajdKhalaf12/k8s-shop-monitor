@@ -17,6 +17,7 @@ SEVERITY = {
     "ml_anomaly": "high",
     "ddos_suspect": "high",
     "auth_attack": "medium",
+    "auth_forbidden": "medium",
     "error_5xx": "low",
     "rate_limited": "medium",
 }

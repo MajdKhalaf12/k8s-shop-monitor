@@ -1,0 +1,34 @@
+controller:
+  service:
+    type: LoadBalancer
+  config:
+    http-snippet: |
+      map $http_x_forwarded_for $log_client_ip {
+          default $remote_addr;
+          "~^(?<fwd>[^,]+)" $fwd;
+      }
+    log-format-escape-json: "true"
+    # ingress-nginx writes access logs with log-format-upstream, not log-format (must be one line)
+    log-format-upstream: '{"time":"$time_iso8601","ip":"$log_client_ip","method":"$request_method","uri":"$request_uri","status":$status,"bytes":$body_bytes_sent,"referer":"$http_referer","ua":"$http_user_agent","duration_us":$request_time}'
+    access-log-path: /var/log/nginx/access.log
+  extraVolumes:
+    - name: access-logs
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: access-logs
+      mountPath: /var/log/nginx
+  extraContainers:
+    - name: classifier
+      image: os2-classifier:latest
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: CLASSIFIER_LOG_PATH
+          value: /var/log/nginx/access.log
+        - name: CLASSIFIER_METRICS_PORT
+          value: "8001"
+      ports:
+        - name: metrics
+          containerPort: 8001
+      volumeMounts:
+        - name: access-logs
+          mountPath: /var/log/nginx

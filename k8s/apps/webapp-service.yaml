@@ -6,11 +6,10 @@ metadata:
   labels:
     app: webapp
 spec:
-  clusterIP: None
+  type: ClusterIP
   selector:
     app: webapp
   ports:
     - name: http
       port: 8000
       targetPort: 8000
-      # /metrics is on the same port; ServiceMonitor uses port name "http"

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traffic
+  namespace: apps
+  labels:
+    app: traffic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traffic
+  template:
+    metadata:
+      labels:
+        app: traffic
+    spec:
+      containers:
+        - name: locust
+          image: os2-traffic:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - daemon.py
+          env:
+            - name: LOCUST_VERIFY_SSL
+              value: "false"
+            - name: LOCUST_HOST_HEADER
+              value: operating-systems.com
+            - name: TRAFFIC_RUN_MINUTES
+              value: "12"
+            - name: TRAFFIC_PAUSE_SEC
+              value: "240"
+            - name: TARGET_HOST
+              value: http://ingress-nginx-controller.ingress-nginx.svc.cluster.local

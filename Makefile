@@ -40,7 +40,7 @@ k8s: check-cluster helm-repos build images
 		-n monitoring --dry-run=client -o yaml | kubectl apply -f -
 	kubectl label configmap grafana-dashboard-os2 -n monitoring \
 		grafana_dashboard=1 release=kube-prometheus-stack --overwrite
-	@echo "Grafana: kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80"
+	@echo "Grafana: http://192.168.28.131:30300 (admin / admin)"
 	@echo "App: https://operating-systems.com  (add 192.168.28.131 operating-systems.com to /etc/hosts)"
 
 k8s-apps: check-cluster build images

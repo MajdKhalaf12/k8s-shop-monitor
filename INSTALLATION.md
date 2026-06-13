@@ -255,13 +255,22 @@ kubectl label configmap grafana-dashboard-os2 -n monitoring \
   grafana_dashboard=1 release=kube-prometheus-stack --overwrite
 ```
 
-Grafana:
+Grafana (NodePort — always reachable, no port-forward):
+
+```text
+http://192.168.28.131:30300
+```
+
+Login: `admin` / `admin` — dashboard **OS2 Stack Overview**.
+
+Works from your Mac or any machine on the LAN. k3s exposes NodePort on every node, so `192.168.28.133:30300` or `.134:30300` also work.
+
+Optional fallback (Mac only, temporary tunnel):
 
 ```bash
 kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+# → http://localhost:3000
 ```
-
-Open [http://localhost:3000](http://localhost:3000) — `admin` / `admin` — dashboard **OS2 Stack Overview**.
 
 ---
 

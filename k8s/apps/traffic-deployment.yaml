@@ -15,6 +15,10 @@ spec:
       labels:
         app: traffic
     spec:
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
       containers:
         - name: locust
           image: os2-traffic:latest
@@ -22,14 +26,23 @@ spec:
           command:
             - python
             - daemon.py
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 1Gi
           env:
             - name: LOCUST_VERIFY_SSL
               value: "false"
             - name: LOCUST_HOST_HEADER
               value: operating-systems.com
             - name: TRAFFIC_RUN_MINUTES
-              value: "12"
+              value: "15"
+            - name: TRAFFIC_MAX_USERS
+              value: "500"
             - name: TRAFFIC_PAUSE_SEC
-              value: "240"
+              value: "120"
             - name: TARGET_HOST
-              value: http://ingress-nginx-controller.ingress-nginx.svc.cluster.local
+              value: https://ingress-nginx-controller.ingress-nginx.svc.cluster.local.

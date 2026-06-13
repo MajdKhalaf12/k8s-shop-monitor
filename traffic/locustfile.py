@@ -9,7 +9,9 @@ from locust import HttpUser, LoadTestShape, between, constant, task
 
 VERIFY = os.environ.get("LOCUST_VERIFY_SSL", "false").lower() == "true"
 HOST_HEADER = os.environ.get("LOCUST_HOST_HEADER")
-RUN_MINUTES = int(os.environ.get("TRAFFIC_RUN_MINUTES", "12"))
+RUN_MINUTES = int(os.environ.get("TRAFFIC_RUN_MINUTES", "15"))
+MAX_USERS = int(os.environ.get("TRAFFIC_MAX_USERS", "500"))
+_BASE_PEAK = 18
 
 PRODUCTS = [1, 2, 3, 4]
 VALID_CREDS = {"username": "admin", "password": "secret123"}
@@ -67,6 +69,11 @@ def _attacker_ip() -> str:
     return f"185.{random.randint(200, 255)}.{random.randint(0, 255)}.{random.randint(1, 254)}"
 
 
+def _init_client(client) -> None:
+    client.verify = VERIFY
+    client.max_redirects = 0
+
+
 def _browser_headers(ua: str, client_ip: str) -> dict[str, str]:
     headers = {
         "User-Agent": ua,
@@ -86,7 +93,7 @@ class Shopper(HttpUser):
     wait_time = between(4, 18)
 
     def on_start(self):
-        self.client.verify = VERIFY
+        _init_client(self.client)
         self.token: str | None = None
         self.last_product: int | None = None
         self.client.headers.update(_browser_headers(random.choice(UA_NORMAL), _shopper_ip()))
@@ -174,7 +181,7 @@ class Attacker(HttpUser):
     wait_time = between(3, 8)
 
     def on_start(self):
-        self.client.verify = VERIFY
+        _init_client(self.client)
         self.client.headers.update(
             {**_browser_headers(random.choice(UA_BOT), _attacker_ip()), "Accept": "*/*"}
         )
@@ -215,7 +222,7 @@ class DDoSFlooder(HttpUser):
     wait_time = constant(0.05)
 
     def on_start(self):
-        self.client.verify = VERIFY
+        _init_client(self.client)
         flood_ip = random.choice(FLOOD_IPS)
         headers = {
             "User-Agent": "flood-bot/1.0",
@@ -244,14 +251,28 @@ class DDoSFlooder(HttpUser):
 
 
 class RealisticTrafficShape(LoadTestShape):
+    def _scale_users(self, base: int) -> int:
+        return max(1, round(base * MAX_USERS / _BASE_PEAK))
+
+    def _scale_spawn(self, base: float) -> float:
+        return max(0.5, round(base * MAX_USERS / _BASE_PEAK, 2))
+
     def _stages(self):
         total = RUN_MINUTES * 60
+        raw = [
+            {"until": int(total * 0.20), "users": 5, "spawn_rate": 0.2, "classes": [Shopper]},
+            {"until": int(total * 0.50), "users": 14, "spawn_rate": 0.3, "classes": [Shopper, Attacker]},
+            {"until": int(total * 0.72), "users": 12, "spawn_rate": 0.25, "classes": [Shopper]},
+            {"until": total, "users": _BASE_PEAK, "spawn_rate": 0.5, "classes": [Shopper, DDoSFlooder]},
+        ]
         return [
-            {"until": int(total * 0.25), "users": 5, "spawn_rate": 0.2, "classes": [Shopper]},
-            {"until": int(total * 0.60), "users": 10, "spawn_rate": 0.25, "classes": [Shopper]},
-            {"until": int(total * 0.75), "users": 16, "spawn_rate": 0.35, "classes": [Shopper]},
-            {"until": int(total * 0.88), "users": 14, "spawn_rate": 0.3, "classes": [Shopper, Attacker]},
-            {"until": total, "users": 18, "spawn_rate": 0.5, "classes": [Shopper, Attacker, DDoSFlooder]},
+            {
+                "until": stage["until"],
+                "users": self._scale_users(stage["users"]),
+                "spawn_rate": self._scale_spawn(stage["spawn_rate"]),
+                "classes": stage["classes"],
+            }
+            for stage in raw
         ]
 
     def tick(self):
